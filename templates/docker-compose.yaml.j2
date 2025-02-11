@@ -1,0 +1,61 @@
+networks:
+  rocketmq:
+    driver: bridge
+
+services:
+  rocketmq_server:
+    image: apache/rocketmq:{{ ROCKETMQ_VERSION }}
+    container_name: rocketmq_server
+    ports:
+      - "{{ ROCKETMQ_SERVER_PORT }}:9876"
+    volumes:
+      - mqserverlogs:/home/rocketmq/logs
+    environment:
+      JAVA_OPT_EXT: "{{ ROCKETMQ_SERVER_JAVA_OPT_EXT }}""
+    command: ["sh", "mqnamesrv"]
+    networks:
+      - rocketmq
+
+  rocketmq_broker:
+    image: apache/rocketmq:{{ ROCKETMQ_VERSION }}
+    container_name: rocketmq_broker
+    ports:
+      - "{{ ROCKETMQ_BROKER_PORT }}:10911"
+      - "{{ ROCKETMQ_BROKER_FAST_PORT }}:10909"
+    volumes:
+      - mqbrokerlogs:/home/logs
+      - mqbrokerstore:/home/store
+      - ./broker.conf:/home/rocketmq/broker.conf
+    environment:
+      NAMESRV_ADDR: "rocketmq_server:9876"
+      JAVA_OPT_EXT: "{{ ROCKETMQ_BROKER_JAVA_OPT_EXT }}"
+    command: ["sh", "mqbroker", "-c", "/home/rocketmq/broker.conf", "autoCreateTopicEnable=true"]
+    depends_on:
+      - rocketmq_server
+    networks:
+      - rocketmq
+
+  rocketmq_dashboard:
+    image: apacherocketmq/rocketmq-dashboard:1.0.0
+    container_name: rocketmq_dashboard
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "{{ ROCKETMQ_DASHBOARD_PORT }}:8080"
+    environment:
+      JAVA_OPTS: "-Drocketmq.namesrv.addr=rocketmq_server:9876 -Dcom.rocketmq.sendMessageWithVIPChannel=false"
+    depends_on:
+      - rocketmq_server
+      - rocketmq_broker
+    networks:
+      - rocketmq
+
+volumes:
+  mqserverlogs:
+    driver: local
+  mqbrokerlogs:
+    driver: local
+  mqbrokerstore:
+    driver: local
