@@ -11,7 +11,7 @@ services:
     volumes:
       - mqserverlogs:/home/rocketmq/logs
     environment:
-      JAVA_OPT_EXT: "{{ ROCKETMQ_SERVER_JAVA_OPT_EXT }}""
+      JAVA_OPT_EXT: "{{ ROCKETMQ_SERVER_JAVA_OPT_EXT }}"
     command: ["sh", "mqnamesrv"]
     networks:
       - rocketmq
